@@ -119,13 +119,20 @@ namespace MitchellMarshClassLibrary.Database.Services
         IEnumerable<TDataModel> GetAllActive();
 
     }
+    public interface IBasicViewService<TViewModel>
+    {
+        TViewModel Get(params object[] primary_key);
+
+        IEnumerable<TViewModel> GetAll();
+        IEnumerable<TViewModel> GetAll(Expression<Func<TViewModel, bool>> predicate);
+    }
 
     public class BasicServiceImplementation<TDataModel, TDbContext> :
         IBasicService<TDataModel>
         where TDataModel : DataRowProperties
         where TDbContext : DbContext
     {
-        TDbContext _context;
+        protected TDbContext _context;
 
         public BasicServiceImplementation(TDbContext ctx)
         {
@@ -443,6 +450,33 @@ namespace MitchellMarshClassLibrary.Database.Services
         {
             updateRange.ForEach(e => e.LastModifiedById = UserId);
             Update(updateRange, SaveAfterExecute);
+        }
+    }
+    public class BasicViewImplementation<TViewModel, TDbContext> :
+        IBasicViewService<TViewModel>
+        where TViewModel : class
+        where TDbContext : DbContext
+    {
+        protected TDbContext _context;
+
+        public BasicViewImplementation(TDbContext ctx)
+        {
+            _context = ctx;
+        }
+
+        public TViewModel Get(params object[] primary_key)
+        {
+            return _context.Find<TViewModel>(primary_key);
+        }
+
+        public IEnumerable<TViewModel> GetAll()
+        {
+            return _context.Set<TViewModel>();
+        }
+
+        public IEnumerable<TViewModel> GetAll(Expression<Func<TViewModel, bool>> predicate)
+        {
+            return _context.Set<TViewModel>().Where(predicate);
         }
     }
 }
